@@ -47,3 +47,70 @@ app.post("/shopify/rates", async function(req, res) {
       ShipmentInvoiceValue: itens.reduce(function(a, i) {
         return a + (i.price * i.quantity / 100);
       }, 0),
+ShippingItemArray: itens.map(function(i) {
+        return {
+          Height: 10,
+          Length: 15,
+          Quantity: i.quantity,
+          Weight: i.grams / 1000,
+          Width: 10,
+          SKU: i.sku || "produto"
+        };
+      })
+    };
+    const resp = await axios.post(FRENET_URL, payload, {
+      headers: { "Content-Type": "application/json", "token": FRENET_TOKEN }
+    });
+    const servicos = resp.data.ShippingSevicesArray || [];
+    const rates = servicos.filter(function(s) {
+      return !s.Error;
+    }).map(function(s) {
+      const prazo = parseInt(s.DeliveryTime, 10) + buf;
+      return {
+        service_name: s.ServiceDescription,
+        service_code: s.ServiceCode,
+        total_price: Math.round(parseFloat(s.ShippingPrice) * 100),
+        currency: "BRL",
+        min_delivery_date: dataEntrega(prazo),
+        max_delivery_date: dataEntrega(prazo)
+      };
+    });
+    return res.json({ rates: rates });
+  } catch (err) {
+    console.error("Erro rates:", err.message);
+    return res.status(500).json({ rates: [] });
+  }
+});
+
+app.get("/registrar", async function(req, res) {
+  try {
+    const resp = await axios.post(
+      "https://" + SHOPIFY_STORE + "/admin/api/2026-04/carrier_services.json",
+      {
+        carrier_service: {
+          name: "Frenet Middleware",
+          callback_url: "https://frenet-middleware-production.up.railway.app/shopify/rates",
+          service_discovery: true
+        }
+      },
+      {
+        headers: {
+          "X-Shopify-Access-Token": SHOPIFY_TOKEN,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    return res.json({ sucesso: true, data: resp.data });
+  } catch (err) {
+    return res.status(500).json({ erro: err.response ? err.response.data : err.message });
+  }
+});
+
+app.get("/", function(req, res) {
+  res.json({ status: "ok", message: "Middleware Frenet ativo" });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, function() {
+  console.log("Porta " + PORT);
+});

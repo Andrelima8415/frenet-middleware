@@ -41,13 +41,9 @@ app.post("/shopify/rates", async function(req, res) {
     const rate = req.body.rate;
     const itens = rate.items;
     const buf = buffer();
-
     const payload = {
       SellerCEP: rate.origin.postal_code.replace("-", ""),
       RecipientCEP: rate.destination.postal_code.replace("-", ""),
       ShipmentInvoiceValue: itens.reduce(function(a, i) {
         return a + (i.price * i.quantity / 100);
       }, 0),
-      ShippingItemArray: itens.map(function(i) {
-        return {
-          Height: 10,

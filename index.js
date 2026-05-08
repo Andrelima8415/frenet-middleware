@@ -85,7 +85,7 @@ ShippingItemArray: itens.map(function(i) {
 app.get("/registrar", async function(req, res) {
   try {
     const resp = await axios.post(
-      "https://" + SHOPIFY_STORE + "/admin/api/2026-04/carrier_services.json",
+      "https://" + SHOPIFY_STORE + "/admin/api/2026-01/carrier_services.json",
       {
         carrier_service: {
           name: "Frenet Middleware",
